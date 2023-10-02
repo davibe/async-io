@@ -322,6 +322,7 @@ impl ReactorLock<'_> {
                         // Collect wakers if a writability event was emitted.
                         for &(dir, emitted) in &[(WRITE, ev.writable), (READ, ev.readable)] {
                             if emitted {
+                                println!("delivering event dir: {}, tick: {}", dir, tick);
                                 state[dir].tick = tick;
                                 state[dir].drain_into(&mut wakers);
                             }
@@ -443,6 +444,10 @@ impl Source {
         if let Some((a, b)) = state[dir].ticks {
             // If `state[dir].tick` has changed to a value other than the old reactor tick,
             // that means a newer reactor tick has delivered an event.
+            println!(
+                "checking ticks dir: {}, cur: {}, saved: {}, {}",
+                dir, state[dir].tick, a, b
+            );
             if state[dir].tick != a && state[dir].tick != b {
                 state[dir].ticks = None;
                 return Poll::Ready(Ok(()));
@@ -464,6 +469,8 @@ impl Source {
         if state[dir].ticks.is_none() {
             state[dir].ticks = Some((Reactor::get().ticker(), state[dir].tick));
         }
+
+        println!("saving ticks dir: {}, ticks: {:?}", dir, state[dir].ticks);
 
         // Update interest in this I/O handle.
         if was_empty {
